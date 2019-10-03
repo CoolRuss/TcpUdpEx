@@ -24,8 +24,8 @@ using namespace std;
 
 const int message_size_max = 65537;
 
-//extern struct sockaddr_in server_address;
-//extern bool server_address_flag;
+void intTo4bytes (unsigned char (&b)[4], int integer);
+void bytes4Toint (unsigned char (&b)[4], int &integer);
 
 /// Abstract
 

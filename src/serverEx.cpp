@@ -3,6 +3,29 @@
 const int port = 23000;
 const string addr = "127.0.0.1";
 
+void quest (string &message)
+{
+  // select all digit
+  vector<uint8_t> nums;
+  nums.reserve(message.size());
+  copy_if(message.begin(), message.end(), back_inserter(nums), [](char c){ return isdigit(c); });
+  transform(nums.begin(), nums.end(), nums.begin(), [](uint8_t c){ return c-'0'; });
+  
+  // print sum
+  long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint8_t>());
+  cout << "Sum: " << sum << endl;
+  
+  // print digits in descending order
+  sort(nums.begin(), nums.end(), greater<uint8_t>());
+  cout << "Descending order: ";
+  for_each(nums.cbegin(), nums.cend(), [](const int i){ cout << i << " ";});
+  cout << endl;
+  
+  // print max and min
+  auto mm = minmax_element(nums.begin(), nums.end());
+  cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl;
+}
+
 void action (unique_ptr<Server> &server)
 {
   server->receive();
@@ -11,30 +34,7 @@ void action (unique_ptr<Server> &server)
   
   if (message.size() != 0)
     {
-      // select all digit
-      vector<uint8_t> nums;
-      nums.reserve(message.size());
-      copy_if(message.begin(), message.end(), back_inserter(nums), [](char c){ return isdigit(c); });
-      transform(nums.begin(), nums.end(), nums.begin(), [](uint8_t c){ return c-'0'; });
-      
-      // print digits for debug
-      //cout << "Digits: ";
-      //for_each(nums.cbegin(), nums.cend(), [](const int i){ cout << i << " ";});
-      //cout << endl;
-      
-      // print sum
-      long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint8_t>());
-      cout << "Sum: " << sum << endl;
-      
-      // print digits in descending order
-      sort(nums.begin(), nums.end(), greater<uint8_t>());
-      cout << "Descending order: ";
-      for_each(nums.cbegin(), nums.cend(), [](const int i){ cout << i << " ";});
-      cout << endl;
-      
-      // print max and min
-      auto mm = minmax_element(nums.begin(), nums.end());
-      cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl;
+      quest(message);
     }
   server->send(server->get_message());
 }

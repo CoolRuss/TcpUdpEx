@@ -1,6 +1,6 @@
 #include "../includes/protocols.hpp"
 
-inline void intTo4bytes (unsigned char (&b)[4], int integer)
+void intTo4bytes (unsigned char (&b)[4], int integer)
 {
   b[0] = (integer >> 24) & 0xFF;
   b[1] = (integer >> 16) & 0xFF;
@@ -8,7 +8,7 @@ inline void intTo4bytes (unsigned char (&b)[4], int integer)
   b[3] = integer & 0xFF;
 }
 
-inline void bytes4Toint (unsigned char (&b)[4], int &integer)
+void bytes4Toint (unsigned char (&b)[4], int &integer)
 {
   integer = static_cast<int>(static_cast<unsigned char>(b[0]) << 24 |
 			     static_cast<unsigned char>(b[1]) << 16 | 
