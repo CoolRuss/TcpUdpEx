@@ -24,14 +24,15 @@ using namespace std;
 
 const int message_size_max = 65537;
 
-extern struct sockaddr_in server_address;
-extern bool server_address_flag;
+//extern struct sockaddr_in server_address;
+//extern bool server_address_flag;
+
+/// Abstract
 
 class Protocol
 {
 protected:
-  //static struct sockaddr_in server_address;
-  //static bool server_address_flag;
+  struct sockaddr_in server_address;
   int socket;
   int port;
   int message_size = 0;
@@ -41,7 +42,7 @@ public:
   virtual ~Protocol() {}
   
   virtual string receive() = 0;
-  virtual int send(string message) = 0;
+  virtual void send(string message) = 0;
   virtual void close() = 0;
 
   const string get_message() { return message.substr(0, message_size); }
@@ -55,7 +56,7 @@ protected:
   
 public:
   virtual ~Client() {}
-  virtual void init_client(int port_init, string address) = 0;
+  virtual void init_client(int port_init, string address_init) = 0;
   virtual void connect(function<void ()> action) = 0;
 };
 
@@ -68,20 +69,21 @@ protected:
   
 public:
   virtual ~Server() {}
-  virtual void init_server(int port_init) = 0;
+  virtual void init_server(int port_init, string address_init) = 0;
   virtual void listen(function<void ()> action) = 0;
 };
 
+/// Servers
 
 class TcpServer: public Server
 {
 public:
   ~TcpServer();
-  void init_server(int port_init);
+  void init_server(int port_init, string address_init);
   void listen(function<void ()> action);
   void accept();
   string receive();  
-  int send(string message);
+  void send(string message);
   void close();
 };
 
@@ -90,23 +92,24 @@ class UdpServer: public Server
 {
 public:
   ~UdpServer();
-  void init_server(int port_init);
+  void init_server(int port_init, string address_init);
   void listen(function<void ()> action);
   string receive();  
-  int send(string message);
+  void send(string message);
   void close();
 };
 
 
+/// Clients
 
 class TcpClient: public Client
 {
 public:
   ~TcpClient();
-  void init_client(int port_init, string ip_address);
+  void init_client(int port_init, string address_init);
   void connect(function<void ()> action);
   string receive();  
-  int send(string message);
+  void send(string message);
   void close();
 };
 
@@ -114,10 +117,10 @@ class UdpClient: public Client
 {
 public:
   ~UdpClient();
-  void init_client(int port_init, string ip_address);
+  void init_client(int port_init, string address_init);
   void connect(function<void ()> action);
   string receive();  
-  int send(string message);
+  void send(string message);
   void close();
 };
 
