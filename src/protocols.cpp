@@ -89,7 +89,7 @@ string TcpServer::receive()
   
   bytes4Toint(bytes, message_size);
 
-  cout << "Size: " << message_size << endl;    
+  //cout << "(Size: " << message_size << ")" << endl;    
   
   bytes_received = read(socket_communication, &message[0], message_size);
   
@@ -176,7 +176,7 @@ string TcpClient::receive()
   
   bytes4Toint(bytes, message_size);
     
-  cout << "Size: " << message_size << endl;    
+  //cout << "Size: " << message_size << endl;    
   
   bytes_received = read(socket, &message[0], message_size);
   
@@ -277,7 +277,7 @@ string UdpServer::receive()
   
   bytes4Toint(bytes, message_size);
   
-  cout << "Size: " << message_size << endl;
+  //cout << "(Size: " << message_size << ")" << endl;
   
   bytes_received = recvfrom(socket, &message[0], message_size, MSG_WAITALL,
 			    (struct sockaddr *) &client_address, &client_length);
@@ -365,7 +365,7 @@ string UdpClient::receive()
   
   bytes4Toint(bytes, message_size);
     
-  cout << "Size: " << message_size << endl;    
+  //cout << "Size: " << message_size << endl;    
   
   bytes_received = recvfrom(socket, &message[0], message_size, MSG_WAITALL,
 			    (struct sockaddr *) &server_address, &server_length);
