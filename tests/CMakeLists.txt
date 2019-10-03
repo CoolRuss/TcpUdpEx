@@ -12,10 +12,7 @@ include_directories(
     /usr/include/gmock
 )
 
-#file(GLOB SOURCES src/*.cpp)
-
 add_executable(TcpUdpEx-tests ./utests.cpp ../src/protocols.cpp)
-#add_executable(serverEx ../src/serverEx.cpp ../src/protocols.cpp)
 
 target_link_libraries(TcpUdpEx-tests ${GTEST_LIBRARIES} /usr/lib64/libgmock.so /usr/lib64/libgmock_main.so pthread)
 

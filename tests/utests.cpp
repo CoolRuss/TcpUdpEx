@@ -2,9 +2,6 @@
 #include <gmock/gmock.h> 
 #include <gtest/gtest.h>
 
-//using namespace testing;
-
-
 class TcpUdpEx_tests : public ::testing::Test
 {
 public:
@@ -19,8 +16,6 @@ public:
 class iTcpServer: public TcpServer
 {
 public:
-  //iTcpServer(){}
-  //~iTcpServer(){}
   MOCK_METHOD2(init_server, void(int m, string k));
   MOCK_METHOD1(listen, void(function<void ()> action));
   MOCK_METHOD0(accept, void());
@@ -32,8 +27,6 @@ public:
 class iUdpServer: public UdpServer
 {
 public:
-  //iTcpServer(){}
-  //~iTcpServer(){}
   MOCK_METHOD2(init_server, void(int m, string k));
   MOCK_METHOD1(listen, void(function<void ()> action));
   MOCK_METHOD0(receive, string());
@@ -44,8 +37,6 @@ public:
 class iTcpClient: public TcpClient
 {
 public:
-  //iTcpServer(){}
-  //~iTcpServer(){}
   MOCK_METHOD2(init_client, void(int m, string k));
   MOCK_METHOD1(connect, void(function<void ()> action));
   MOCK_METHOD0(receive, string());
@@ -56,8 +47,6 @@ public:
 class iUdpClient: public UdpClient
 {
 public:
-  //iTcpServer(){}
-  //~iTcpServer(){}
   MOCK_METHOD2(init_client, void(int m, string k));
   MOCK_METHOD1(connect, void(function<void ()> action));
   MOCK_METHOD0(receive, string());
@@ -81,6 +70,7 @@ TEST (TcpUdpEx_tests, transformInt)
 
 TEST (TcpUdpEx_tests, extraQuest)
 {
+  // Test algorithms
   string message = "ghjY6e3df7df5dz2sd2f09845";
   
   // select all digit
@@ -102,8 +92,6 @@ TEST (TcpUdpEx_tests, extraQuest)
   auto mm = minmax_element(nums.begin(), nums.end());
   ASSERT_EQ(static_cast<int>(*mm.second), 9);
   ASSERT_EQ(static_cast<int>(*mm.first), 0);
-
-
 }
 
 int main(int argc, char* argv[])

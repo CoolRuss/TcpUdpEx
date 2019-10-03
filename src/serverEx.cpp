@@ -3,6 +3,7 @@
 const int port = 23000;
 const string addr = "127.0.0.1";
 
+// Quest with STL
 void quest (string &message)
 {
   // select all digit
@@ -26,10 +27,10 @@ void quest (string &message)
   cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl;
 }
 
+// Extraction of the main actions
 void action (unique_ptr<Server> &server)
 {
-  server->receive();
-  string message = server->get_message();
+  string message = server->receive();
   cout << "Received message: " << message << endl;
   
   if (message.size() != 0)

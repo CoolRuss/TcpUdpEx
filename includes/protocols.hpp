@@ -24,10 +24,12 @@ using namespace std;
 
 const int message_size_max = 65537;
 
+// Transform int to sequence of byte to send.
 void intTo4bytes (unsigned char (&b)[4], int integer);
+// Transform sequence of byte to int to receive.
 void bytes4Toint (unsigned char (&b)[4], int &integer);
 
-/// Abstract
+/// Abstract classes
 
 class Protocol
 {
@@ -73,18 +75,19 @@ public:
   virtual void listen(function<void ()> action) = 0;
 };
 
+
 /// Servers
 
 class TcpServer: public Server
 {
 public:
   ~TcpServer();
-  void init_server(int port_init, string address_init);
-  void listen(function<void ()> action);
-  void accept();
-  string receive();  
-  void send(string message);
-  void close();
+  void init_server(int port_init, string address_init); // Socket() and Bind()
+  void listen(function<void ()> action);                // Listen() and environment for any action
+  void accept();                                        // Accept()
+  string receive();                                     // Read the size data then read the data
+  void send(string message);                            // Send the size data then send the data
+  void close();                                         // Close() for socket and socket_communication
 };
 
 
@@ -92,11 +95,11 @@ class UdpServer: public Server
 {
 public:
   ~UdpServer();
-  void init_server(int port_init, string address_init);
-  void listen(function<void ()> action);
-  string receive();  
-  void send(string message);
-  void close();
+  void init_server(int port_init, string address_init); // Socket() and Bind()
+  void listen(function<void ()> action);                // Environment for any action
+  string receive();                                     // Recvfrom() size and Recvfrom() data
+  void send(string message);                            // Sendto() size and Sendto() data
+  void close();                                         // Close() for socket and socket_communication
 };
 
 
@@ -106,22 +109,22 @@ class TcpClient: public Client
 {
 public:
   ~TcpClient();
-  void init_client(int port_init, string address_init);
-  void connect(function<void ()> action);
-  string receive();  
-  void send(string message);
-  void close();
+  void init_client(int port_init, string address_init); // Socket()
+  void connect(function<void ()> action);               // Connect() and environment for any action
+  string receive();                                     // Read() size and Read() data
+  void send(string message);                            // Send() size and Send() data
+  void close();                                         // Close() for socket
 };
 
 class UdpClient: public Client
 {
 public:
   ~UdpClient();
-  void init_client(int port_init, string address_init);
-  void connect(function<void ()> action);
-  string receive();  
-  void send(string message);
-  void close();
+  void init_client(int port_init, string address_init); // Socket()
+  void connect(function<void ()> action);               // Environment for any action
+  string receive();                                     // Recvfrom() size and Recvfrom() data
+  void send(string message);                            // Sendto() size and Sendto() data
+  void close();                                         // Close() for socket
 };
 
 #endif

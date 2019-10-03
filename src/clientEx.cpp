@@ -3,23 +3,15 @@
 const int port = 23000;
 const string addr = "127.0.0.1";
 
+// Extraction of the main actions
 void action(unique_ptr<Client> &client)
 {
   string message = string(message_size_max, 0);
   cin.get(&message[0], message_size_max);
-
-  if (cin.gcount() == 0)
-    {
-      message = "";
-    }
-  else
-    {
-      message.resize(cin.gcount());      
-    }
+  message.resize(cin.gcount());      
   
   client->send(message);
-  client->receive();
-  cout << "Received response: " << client->get_message() << endl;
+  cout << "Received response: " << client->receive() << endl;
 }
 
 int main(int argc, char* argv[])
