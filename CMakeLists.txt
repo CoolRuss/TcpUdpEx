@@ -7,6 +7,6 @@ include_directories(includes)
 
 #file(GLOB SOURCES src/*.cpp)
 
-add_executable(clientEx src/clientEx.cpp)
-add_executable(serverEx src/serverEx.cpp)
+add_executable(clientEx src/clientEx.cpp src/protocols.cpp)
+add_executable(serverEx src/serverEx.cpp src/protocols.cpp)
 
