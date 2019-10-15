@@ -11,20 +11,26 @@ void quest (const string& message)
   nums.reserve(message.size());
   copy_if(message.begin(), message.end(), back_inserter(nums), [](char c){ return isdigit(c); });
   transform(nums.begin(), nums.end(), nums.begin(), [](uint8_t c){ return c-'0'; });
-  
-  // print sum
-  long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint32_t>());
-  cout << "Sum: " << sum << endl;
-  
-  // print digits in descending order
-  sort(nums.begin(), nums.end(), greater<uint8_t>());
-  cout << "Descending order: ";
-  for_each(nums.cbegin(), nums.cend(), [](const int i){ cout << i << " ";});
-  cout << endl;
-  
-  // print max and min
-  auto mm = minmax_element(nums.begin(), nums.end());
-  cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl << endl;
+  if (nums.size() != 0)
+    {
+      // print sum
+      long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint32_t>());
+      cout << "Sum: " << sum << endl;
+      
+      // print digits in descending order
+      sort(nums.begin(), nums.end(), greater<uint8_t>());
+      cout << "Descending order: ";
+      for_each(nums.cbegin(), nums.cend(), [](const int i){ cout << i << " ";});
+      cout << endl;
+      
+      // print max and min
+      auto mm = minmax_element(nums.begin(), nums.end());
+      cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl << endl;
+    }
+  else
+    {
+      cout << "There is no digits." << endl;
+    }
 }
 
 int main(int argc, char* argv[])

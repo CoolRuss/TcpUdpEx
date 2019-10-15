@@ -75,10 +75,9 @@ void TcpServer::accept()
 const string TcpServer::receive()
 {
   int bytes_received = 0;
-  for(;;)
+  for(;;) // get size data
     {
-      int result = recv(socket_communication, reinterpret_cast<char*>(&message_size)+bytes_received, sizeof(message_size) - bytes_received, 0);
-      //cout << "Size: " << message_size << endl;
+      int result = recv(socket_communication, reinterpret_cast<char*>(&message_size) + bytes_received, sizeof(message_size) - bytes_received, 0);
       bytes_received += result;
       if (result < 0)
 	{
@@ -100,7 +99,7 @@ const string TcpServer::receive()
     }
 
   bytes_received = 0;
-  for (;;)
+  for (;;) // get data
     {
       int result = recv(socket_communication, &message[bytes_received + 1], message_size - bytes_received, 0);
       bytes_received += result;
@@ -216,10 +215,9 @@ void TcpClient::connect()
 const string TcpClient::receive()
 {
   int bytes_received = 0;
-  for(;;)
+  for(;;) // get size data
     {
       int result = recv(socket, reinterpret_cast<char*>(&message_size) + bytes_received, sizeof(message_size) - bytes_received, 0);
-      //cout << "Size: " << message_size << endl;
       bytes_received += result;
       if (result < 0)
 	{
@@ -240,7 +238,7 @@ const string TcpClient::receive()
     }
 
   bytes_received = 0;
-  for (;;)
+  for (;;) // get data
     {
       int result = recv(socket, &message[bytes_received + 1], message_size - bytes_received, 0);
       bytes_received += result;
@@ -335,6 +333,15 @@ void UdpServer::init_server(int port_init, const string& address_init)
       perror("Failed setsockopt() for send buffer"); 
       exit(EXIT_FAILURE); 
     }
+
+  struct timeval timeout;      
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+  if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout))) 
+    { 
+      perror("Failed setsockopt() for receive buffer timeout"); 
+      exit(EXIT_FAILURE); 
+    }
   
   memset(&server_address, 0, sizeof(struct sockaddr_in));
   
@@ -356,7 +363,6 @@ void UdpServer::init_server(int port_init, const string& address_init)
 const string UdpServer::receive()
 {
   string temp(message_size_max, 0);
-  
   int bytes_received = recvfrom(socket, &temp[0], 65507, MSG_WAITALL,
 				(struct sockaddr *) &client_address, &client_length);
   if (bytes_received < 0)
@@ -365,22 +371,28 @@ const string UdpServer::receive()
       message_size = 0;
       return get_message();
     }
-
+ 
   bytes_received--;
   
-  if (temp[0] == '1')
+  if (temp[0] == '1') // receive one packet
     {
       message.replace(0, 65507, temp);
     }
-  else if (temp[0] == '2')
+  else if (temp[0] == '2') // receive two packets
     {
       message.replace(0, 65507, temp);
       
       int result = recvfrom(socket, &temp[0], message_size_max - 65506 + 1, MSG_WAITALL,
 			    (struct sockaddr *) &client_address, &client_length);
-      if ((result < 0) || (temp[0] != '3'))
+      if (result < 0)
 	{
 	  perror("Failed to receive a second chunk data from socket");
+	  message_size = 0;
+	  return get_message();
+	}
+      if (temp[0] != '3')
+	{
+	  cerr << "Failed to receive a second chunk data from socket. Error header." << endl;
 	  message_size = 0;
 	  return get_message();
 	}
@@ -388,24 +400,28 @@ const string UdpServer::receive()
       bytes_received += result;
       message.replace(65507, result, temp.substr(1));
     }
-  else if (temp[0] == '3')
+  else if (temp[0] == '3') // receive two packets in reverse
     {
       message.replace(65507, bytes_received, temp.substr(1));
 
       int result = recvfrom(socket, &message[0], 65507, MSG_WAITALL,
 				 (struct sockaddr *) &client_address, &client_length);
-      if ((result < 0) || (message[0] != '2'))
+      if (result < 0)
 	{
 	  perror("Failed to receive a first chunk data from socket");
+	  message_size = 0;
+	  return get_message();
+	}
+      if (message[0] != '2')
+	{
+	  cerr << "Failed to receive a first chunk data from socket. Error header." << endl;
 	  message_size = 0;
 	  return get_message();
 	}
       result--;
       bytes_received += result;
     }
-
   message_size = bytes_received;
-  //cout << "Size: " << message_size << endl;
   return get_message();
 }
 
@@ -421,6 +437,7 @@ void UdpServer::send(const string& message)
 	  perror("Failed to send a data to socket");
 	  return;
 	}
+      
       data = "3" + message.substr(65507 - 1);
       if ((sendto(socket, data.c_str(), data.size(), MSG_CONFIRM,
 		  (const struct sockaddr *) &client_address, client_length)) < 0)
@@ -428,6 +445,7 @@ void UdpServer::send(const string& message)
 	  perror("Failed to send a data to socket");
 	  return;
 	}
+      
     }
   else // The message is lesser than max size of packet
     {
@@ -482,6 +500,15 @@ void UdpClient::init_client(int port_init, const string& address_init)
       perror("Failed setsockopt() for send buffer"); 
       exit(EXIT_FAILURE); 
     }
+
+  struct timeval timeout;      
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+  if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout))) 
+    { 
+      perror("Failed setsockopt() for receive buffer timeout"); 
+      exit(EXIT_FAILURE); 
+    }
   
   port = port_init;
   
@@ -498,7 +525,6 @@ void UdpClient::init_client(int port_init, const string& address_init)
 const string UdpClient::receive()
 {
   string temp(message_size_max, 0);
-  
   int bytes_received = recvfrom(socket, &temp[0], 65507, MSG_WAITALL,
 				(struct sockaddr *) &server_address, &server_length);
   if (bytes_received < 0)
@@ -510,19 +536,25 @@ const string UdpClient::receive()
 
   bytes_received--;
   
-  if (temp[0] == '1') // one packet
+  if (temp[0] == '1') // receive one packet
     {
       message.replace(0, 65507, temp);
     }
-  else if (temp[0] == '2') // two packets
+  else if (temp[0] == '2') // receive two packets
     {
       message.replace(0, 65507, temp);
       
       int result = recvfrom(socket, &temp[0], message_size_max - 65506 + 1, MSG_WAITALL,
 			    (struct sockaddr *) &server_address, &server_length);
-      if ((result < 0) || (temp[0] != '3'))
+      if (result < 0)
 	{
 	  perror("Failed to receive a second chunk data from socket");
+	  message_size = 0;
+	  return get_message();
+	}
+      if (temp[0] != '3')
+	{
+	  cerr << "Failed to receive a second chunk data from socket. Error header." << endl;
 	  message_size = 0;
 	  return get_message();
 	}
@@ -530,15 +562,21 @@ const string UdpClient::receive()
       bytes_received += result;
       message.replace(65507, result, temp.substr(1));
     }
-  else if (temp[0] == '3') //two packets in reverse
+  else if (temp[0] == '3') // receive two packets in reverse
     {
       message.replace(65507, bytes_received, temp.substr(1));
 
       int result = recvfrom(socket, &message[0], 65507, MSG_WAITALL,
 				 (struct sockaddr *) &server_address, &server_length);
-      if ((result < 0) || (message[0] != '2'))
+      if (result < 0)
 	{
 	  perror("Failed to receive a first chunk data from socket");
+	  message_size = 0;
+	  return get_message();
+	}
+      if (message[0] != '2')
+	{
+	  cerr << "Failed to receive a first chunk data from socket. Error header." << endl;
 	  message_size = 0;
 	  return get_message();
 	}
@@ -547,22 +585,14 @@ const string UdpClient::receive()
     }
 
   message_size = bytes_received;
-  //cout << "Size: " << message_size << endl;
   return get_message();
 }
 
 void UdpClient::send(const string& message)
 {
   string data;
-  if (message.size() > 65507 - 1)
+  if (message.size() > 65507 - 1) // break down message into two packets
     {
-      data = "2" + message.substr(0, 65507 - 1);
-      if ((sendto(socket, data.c_str(), data.size(), MSG_CONFIRM,
-		  (const struct sockaddr *) &server_address, sizeof(server_address))) < 0)
-	{
-	  perror("Failed to send a data to socket");
-	  return;
-	}
       data = "3" + message.substr(65507 - 1);
       if ((sendto(socket, data.c_str(), data.size(), MSG_CONFIRM,
 		  (const struct sockaddr *) &server_address, sizeof(server_address))) < 0)
@@ -570,6 +600,14 @@ void UdpClient::send(const string& message)
 	  perror("Failed to send a data to socket");
 	  return;
 	}
+
+      data = "2" + message.substr(0, 65507 - 1);
+      if ((sendto(socket, data.c_str(), data.size(), MSG_CONFIRM,
+		  (const struct sockaddr *) &server_address, sizeof(server_address))) < 0)
+	{
+	  perror("Failed to send a data to socket");
+	  return;
+	} 
     }
   else // The message is lesser than max size of packet
     {
