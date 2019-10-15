@@ -4,40 +4,72 @@ const int port = 23000;
 const string addr = "127.0.0.1";
 
 // Extraction of the main actions
-void action(unique_ptr<Client> &client)
+template <typename prot>
+void action(unique_ptr<prot>& client)
 {
-  string message = string(message_size_max, 0);
-  cin.get(&message[0], message_size_max);
-  message.resize(cin.gcount());      
-  
-  client->send(message);
-  cout << "Received response: " << client->receive() << endl;
+  for(;;)
+    {
+      cout << "Enter your message:" << endl;
+      
+      string message = "";
+      getline(cin, message);
+      if (message == "")
+	{
+	  cout << "You have entered an empty message! Try again." << endl;
+	  continue;
+	}
+
+      if (message.size() > message_size_max)
+	message.resize(message_size_max);
+      
+      cout << "Size message: " << message.size() << endl;
+      
+      client->send(message);
+      client->receive();
+      cout << "Received response: " << client->get_message() << endl;
+      cout << "Response size: " << client->get_message().size() << endl;
+    }
+}
+
+void clear_icanon()
+{
+  struct termios settings;
+  int result = tcgetattr(STDIN_FILENO, &settings);
+  if (result < 0)
+    {
+      perror ("Error in tcgetattr()");
+      return;
+    }
+
+  settings.c_lflag &= ~ICANON;
+
+  result = tcsetattr(STDIN_FILENO, TCSANOW, &settings);
+  if (result < 0)
+    {
+      perror ("Error in tcsetattr()");
+      return;
+   }
 }
 
 int main(int argc, char* argv[])
 {
-  unique_ptr<Client> client;
+  clear_icanon();
   if (argc == 2 && strncmp(argv[1], "--tcp", 5) == 0)
     {
-      client.reset(new TcpClient());
-      cout << "The client has been started. (TCP)" << endl;    
-    }
-  else if (argc == 2 && strncmp(argv[1], "--udp", 5) == 0)
-    {
-      client.reset(new UdpClient());
-      cout << "The client has been started. (UDP)" << endl;    
+      unique_ptr<TcpClient> client(new TcpClient);      
+      cout << "The client has been started. (TCP). Exit by Ctrl-c." << endl;     
+      client->init_client(port, addr);
+      client->connect();
+      action<TcpClient>(client);
     }
   else
     {
-      cout << "You should add any of the following arguments: --tcp or --udp!" << endl;
-      exit(0);
+      unique_ptr<UdpClient> client(new UdpClient);     
+      cout << "The client has been started. (UDP by default, --tcp for TCP). Exit by Ctrl-c." << endl;
+      client->init_client(port, addr);
+      action<UdpClient>(client);
     }
-  
-  client->init_client(port, addr);
-  cout << "Enter your message:" << endl;    
-  client->connect([&client](){ action(client); });
 
-  cout << "Closing the client." << endl;
   return 0;
 }
   

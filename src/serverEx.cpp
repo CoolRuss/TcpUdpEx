@@ -4,7 +4,7 @@ const int port = 23000;
 const string addr = "127.0.0.1";
 
 // Quest with STL
-void quest (string &message)
+void quest (const string& message)
 {
   // select all digit
   vector<uint8_t> nums;
@@ -13,7 +13,7 @@ void quest (string &message)
   transform(nums.begin(), nums.end(), nums.begin(), [](uint8_t c){ return c-'0'; });
   
   // print sum
-  long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint8_t>());
+  long sum = accumulate(nums.begin(), nums.end(), 0, plus<uint32_t>());
   cout << "Sum: " << sum << endl;
   
   // print digits in descending order
@@ -24,60 +24,101 @@ void quest (string &message)
   
   // print max and min
   auto mm = minmax_element(nums.begin(), nums.end());
-  cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl;
-}
-
-// Extraction of the main actions
-void action (unique_ptr<Server> &server)
-{
-  string message = server->receive();
-  cout << "Received message: " << message << endl;
-  
-  if (message.size() != 0)
-    {
-      quest(message);
-    }
-  server->send(server->get_message());
+  cout << "Max\\min: " << static_cast<int>(*mm.second) << ", " << static_cast<int>(*mm.first) << endl << endl;
 }
 
 int main(int argc, char* argv[])
 {
-  unique_ptr<Server> server_tcp (new TcpServer());
-  unique_ptr<Server> server_udp (new UdpServer());
+  unique_ptr<TcpServer> server_tcp (new TcpServer());
+  unique_ptr<UdpServer> server_udp (new UdpServer());
 
   server_tcp->init_server(port, addr);
-  server_tcp->listen([](){});
+  server_tcp->listen();
   server_udp->init_server(port, addr);
   
-  cout << "The server has been started. Waiting for a client..." << endl;
+  cout << "The server has been started. Waiting for a clients..." << endl;
 
-  fd_set rset;
-  FD_ZERO(&rset);
-  int maxfd = max(server_udp->get_socket(), server_tcp->get_socket()) + 1;
-
-  
+  for (;;)
+    {
+      struct timeval tv {10, 0};
+      fd_set rset;
+      FD_ZERO(&rset);
+      int maxfd = max(server_udp->get_socket(), server_tcp->get_socket()) + 1;
+      
       FD_SET(server_tcp->get_socket(), &rset);
       FD_SET(server_udp->get_socket(), &rset);
-
-      int ready = select(maxfd, &rset, NULL, NULL, NULL);
       
-      if (FD_ISSET(server_tcp->get_socket(), &rset))
+      int ready = select(maxfd, &rset, NULL, NULL, &tv);
+
+      if (ready < 0)
 	{
-	  cout << "(Connected by TCP)" << endl;
-	  server_tcp->listen([&server_tcp]()
-			     {
-			       dynamic_cast<TcpServer*>(server_tcp.get())->accept();
-			       action(server_tcp);
-			     });
+	  perror("Failed select()");
+	  exit(EXIT_FAILURE);
+	}
+      else if (ready == 0)
+	{
+	  cout << "10 second has now passed." << endl;
+	  continue;
+	}
+      else if (FD_ISSET(server_tcp->get_socket(), &rset))
+	{
+	  cout << endl << "(Connected by TCP)" << endl;
+	  server_tcp->client_reset();
+	  server_tcp->listen();
+	  server_tcp->accept();
+	  
+	  for (;;)
+	    {
+	      string message = "";
+	      if (server_tcp->is_client_connect())
+		{
+		  message = server_tcp->receive();
+		}
+	      else
+		{
+		  server_tcp->close_communication();
+		  break;
+		}
+
+	      if (server_tcp->is_client_connect())
+		{
+		  cout << "Received message: " << message << endl;
+		  cout << "Size message: " << message.size() << endl;
+		  if (message.size() != 0)
+		    {
+		      quest(message);
+		    }
+		}
+	      else
+		{
+		  server_tcp->close_communication();
+		  break;
+		}
+	      
+  	      if (server_tcp->is_client_connect())
+		{
+		  server_tcp->send(server_tcp->get_message());
+		}
+	      else
+		{
+		  server_tcp->close_communication();
+		  break;
+		}
+	    }
 	}
         
       if (FD_ISSET(server_udp->get_socket(), &rset))
 	{
-	  cout << "(Connected by UDP)" << endl;
-	  server_udp->listen([&server_udp](){ action(server_udp); });
+	  cout << endl << "(Connected by UDP)" << endl;
+	  
+	  string message = server_udp->receive();
+	  cout << "Received message: " << message << endl;
+	  cout << "Size message: " << message.size() << endl;
+	  
+	  if (message.size() != 0) quest(message);
+	  server_udp->send(server_udp->get_message());
 	}
+    }
     
-    
-  cout << "Closing the server." << endl;
   return 0;
 }
